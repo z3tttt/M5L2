@@ -57,25 +57,39 @@ def handle_show_visited_cities(message):
             bot.send_photo(message.chat.id, photo)
     else:
         bot.send_message(message.chat.id, 'Вы еще не добавили ни одного города.')
+@bot.message_handler(commands=['cities_by_country'])
+def handle_cities_by_country(message):
+    country = ' '.join(message.text.split()[1:])
+    cities = manager.select_cities_by_country(country)
+    if cities:
+        bot.send_message(message.chat.id, f"Города в {country}: {', '.join(cities)}")
+    else:
+        bot.send_message(message.chat.id, "Нет данных по этой стране.")
+
+@bot.message_handler(commands=['cities_by_density'])
+def handle_cities_by_density(message):
+    try:
+        min_density = int(message.text.split()[1])
+        cities = manager.select_cities_by_density(min_density)
+        if cities:
+            bot.send_message(message.chat.id, f"Города с плотностью выше {min_density}: {', '.join(cities)}")
+        else:
+            bot.send_message(message.chat.id, "Нет данных.")
+    except (IndexError, ValueError):
+        bot.send_message(message.chat.id, "Введите число после команды.")
+
+@bot.message_handler(commands=['time'])
+def handle_time(message):
+    city_name = ' '.join(message.text.split()[1:])
+    city_time = manager.get_city_time(city_name)
+    bot.send_message(message.chat.id, f"Время в {city_name}: {city_time}")
 
 def create_map(filename, cities, coordinates, color='red'):
     plt.figure(figsize=(10, 5))
     plt.xlim(-180, 180)
     plt.ylim(-90, 90)
     
-    # Отображение точек городов
-    for city, coord in zip(cities, coordinates):
-        if coord:
-            plt.scatter(coord[1], coord[0], c=color, label=city, edgecolors='black', s=100)
     
-    plt.legend()
-    plt.title("Города на карте")
-    plt.xlabel("Долгота")
-    plt.ylabel("Широта")
-    plt.grid(True, linestyle='--', alpha=0.5)
-    
-    plt.savefig(filename)
-    plt.close()
 
 if __name__ == "__main__":
     manager = DB_Map(DATABASE)
